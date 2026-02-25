@@ -27,6 +27,9 @@ jobs:
         run: gleam deps download
       - name: Build app
         run: gleam run -m lustre/dev build --minify --outdir=dist
+      - name: Fix asset paths for GitHub Pages
+        run: |
+          sed -i 's|src="/defense_ev_calculator.js"|src="/defense-ev-calculator/defense_ev_calculator.js"|' dist/index.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
