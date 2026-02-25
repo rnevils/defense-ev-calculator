@@ -1,4 +1,4 @@
-name = "defense"
+name = "defense_ev_calculator"
 version = "1.0.0"
 target = "javascript"
 
