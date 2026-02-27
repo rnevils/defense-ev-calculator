@@ -56,7 +56,6 @@ fn update(model: Model, msg: Msg) -> Model {
       calcs.PkmnConfig(..model.config, evs_left:)
     }
     UserUpdatedBias(bias_string) -> {
-      // let bias = get_float(bias_string)
       let assert Ok(bias) = int.parse(bias_string)
       calcs.PkmnConfig(..model.config, bias:)
     }

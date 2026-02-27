@@ -25,6 +25,11 @@ jobs:
           rebar3-version: "3"
       - name: Install dependencies
         run: gleam deps download
+      - name: Download DaisyUI files
+        run: |
+          mkdir -p src/vendor && \
+          curl -sLo src/vendor/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs && \
+          curl -sLo src/vendor/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
       - name: Build app
         run: gleam run -m lustre/dev build --minify --outdir=dist
       - name: Fix asset paths for GitHub Pages
