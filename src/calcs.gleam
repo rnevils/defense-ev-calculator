@@ -1,6 +1,6 @@
 import gleam/int
 
-// import gleam_community/maths
+import gleam_community/maths
 
 pub type NatureOption {
   FindBestOption
@@ -28,6 +28,8 @@ pub type Results {
     def_stat: Int,
     sdef_stat: Int,
     nature: Nature,
+    def_tier: Float,
+    sdef_tier: Float,
   )
 }
 
@@ -42,7 +44,7 @@ pub type PkmnConfig {
     sdef_iv: Int,
     evs_left: Int,
     level: Int,
-    nature: NatureOption,
+    nature_option: NatureOption,
     bias: Int,
   )
 }
@@ -58,9 +60,11 @@ pub fn calc_results(config: PkmnConfig) {
       def_stat: 1,
       sdef_stat: 1,
       nature: Neutral,
+      def_tier: -1.0,
+      sdef_tier: -1.0,
     ),
   )
-  let #(_, res) = case config.nature {
+  let #(_, res) = case config.nature_option {
     FindBestOption -> {
       let #(def_harm, def_res) = run_calc_results(initial, IncreaseDef, config)
       let #(sdef_harm, sdef_res) =
@@ -77,7 +81,11 @@ pub fn calc_results(config: PkmnConfig) {
     DecreaseDefOption -> run_calc_results(initial, DecreaseDef, config)
     DecreaseSDefOption -> run_calc_results(initial, DecreaseSDef, config)
   }
-  res
+
+  // add in tiers
+  let assert Ok(def_tier) = calc_defensive_tier(res.hp_stat, res.def_stat)
+  let assert Ok(sdef_tier) = calc_defensive_tier(res.hp_stat, res.sdef_stat)
+  Results(..res, def_tier:, sdef_tier:)
 }
 
 /// Cycles through all possible EV distributions to give you the one that provides you with the lowest possible Overall Harm
@@ -136,6 +144,7 @@ fn run_calc_results(initial: #(Float, Results), nature, config: PkmnConfig) {
               #(
                 overall_harm,
                 Results(
+                  ..acc.1,
                   hp_evs:,
                   def_evs:,
                   sdef_evs:,
@@ -155,10 +164,9 @@ fn run_calc_results(initial: #(Float, Results), nature, config: PkmnConfig) {
   })
 }
 
-// fn calc_def_tier(hp: Int, def: Int) {
-//   let x = int.to_float(int.multiply(hp, def))
-//   maths.logarithm(1.1, x)
-// }
+fn calc_defensive_tier(hp: Int, stat: Int) {
+  maths.logarithm(int.to_float(int.multiply(hp, stat)), 1.1)
+}
 
 /// https://www.smogon.com/dp/articles/maximizing_defenses
 /// Biased Overall Harm = (2B)[(k + 2D) ÷ HD] + (2 – 2B)[(k + 2S) ÷ HS]

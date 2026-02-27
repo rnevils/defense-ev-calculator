@@ -1,7 +1,9 @@
 import calcs.{type Nature, type NatureOption, type PkmnConfig, type Results}
 import gleam/dict.{type Dict}
+import gleam/float
 import gleam/int
 import gleam/list
+import gleam/result
 import lustre
 import lustre/attribute
 import lustre/element.{type Element}
@@ -44,41 +46,96 @@ type Msg {
   UserUpdatedLevel(String)
 }
 
-fn update(model: Model, msg: Msg) -> Model {
-  let config = case msg {
+fn valid_evs_left_range(evs_left: Int) {
+  case evs_left > -1 && evs_left < 509 {
+    True -> Ok(evs_left)
+    False -> Error(Nil)
+  }
+}
+
+fn valid_level_range(level: Int) {
+  case level > -1 && level < 101 {
+    True -> Ok(level)
+    False -> Error(Nil)
+  }
+}
+
+fn valid_ivs_range(ivs: Int) {
+  case ivs > -1 && ivs < 32 {
+    True -> Ok(ivs)
+    False -> Error(Nil)
+  }
+}
+
+fn parse_input_int(s: String) {
+  case s {
+    "" -> Ok(0)
+    _ -> int.parse(s)
+  }
+}
+
+fn validate_input(model: Model, msg: Msg) {
+  case msg {
     UserUpdatedPokemon(pokemon_name) -> {
-      // get new pokemon
-      let assert Ok(pokemon) = dict.get(model.data, pokemon_name)
-      set_config(pokemon)
+      model.data
+      |> dict.get(pokemon_name)
+      |> result.try(fn(x) { Ok(set_config(x)) })
     }
     UserUpdatedEVsLeft(evs_left_string) -> {
-      let assert Ok(evs_left) = int.parse(evs_left_string)
-      calcs.PkmnConfig(..model.config, evs_left:)
+      evs_left_string
+      |> parse_input_int
+      |> result.try(valid_evs_left_range)
+      |> result.try(fn(x) { Ok(calcs.PkmnConfig(..model.config, evs_left: x)) })
     }
     UserUpdatedBias(bias_string) -> {
-      let assert Ok(bias) = int.parse(bias_string)
-      calcs.PkmnConfig(..model.config, bias:)
+      bias_string
+      |> parse_input_int
+      |> result.try(fn(x) { Ok(calcs.PkmnConfig(..model.config, bias: x)) })
     }
     UserUpdatedNature(nature_string) -> {
-      let nature = string_to_nature(nature_string)
-      calcs.PkmnConfig(..model.config, nature:)
+      nature_string
+      |> string_to_nature_option
+      |> result.try(fn(x) {
+        Ok(calcs.PkmnConfig(..model.config, nature_option: x))
+      })
     }
     UserUpdatedLevel(level_string) -> {
-      case int.parse(level_string) {
-        Ok(level) ->
-          case level >= 1 && level <= 100 {
-            True -> calcs.PkmnConfig(..model.config, level:)
-            False -> model.config
-          }
-        Error(_) -> model.config
-      }
+      level_string
+      |> parse_input_int
+      |> result.try(valid_level_range)
+      |> result.try(fn(x) { Ok(calcs.PkmnConfig(..model.config, level: x)) })
     }
-    UserUpdatedHPIVs(_) -> todo
-    UserUpdatedDefIVs(_) -> todo
-    UserUpdatedSDefIVs(_) -> todo
+    UserUpdatedHPIVs(hp_iv_string) -> {
+      hp_iv_string
+      |> parse_input_int
+      |> result.try(valid_ivs_range)
+      |> result.try(fn(x) { Ok(calcs.PkmnConfig(..model.config, hp_iv: x)) })
+    }
+    UserUpdatedDefIVs(def_iv_string) -> {
+      def_iv_string
+      |> parse_input_int
+      |> result.try(valid_ivs_range)
+      |> result.try(fn(x) { Ok(calcs.PkmnConfig(..model.config, def_iv: x)) })
+    }
+    UserUpdatedSDefIVs(sdef_iv_string) -> {
+      sdef_iv_string
+      |> parse_input_int
+      |> result.try(valid_ivs_range)
+      |> result.try(fn(x) { Ok(calcs.PkmnConfig(..model.config, sdef_iv: x)) })
+    }
   }
-  let results = calcs.calc_results(config)
-  Model(..model, config:, results:)
+}
+
+fn update(model: Model, msg: Msg) -> Model {
+  // so either it returns an error or it returns an Ok(config)
+
+  case validate_input(model, msg) {
+    Ok(config) -> {
+      let results = calcs.calc_results(config)
+      Model(..model, config:, results:)
+    }
+    Error(_) -> model
+  }
 }
 
 fn set_config(pokemon: Pokemon) {
@@ -92,7 +149,7 @@ fn set_config(pokemon: Pokemon) {
     sdef_iv: 31,
     evs_left: 508,
     level: 100,
-    nature: calcs.NeutralOption,
+    nature_option: calcs.NeutralOption,
     bias: 50,
   )
 }
@@ -140,21 +197,24 @@ fn nature_option_to_string(nature: NatureOption) {
   }
 }
 
+fn string_to_nature_option(s: String) {
+  case s {
+    "Find Best" -> Ok(calcs.FindBestOption)
+    "IncreaseDef" -> Ok(calcs.IncreaseDefOption)
+    "IncreaseSDef" -> Ok(calcs.IncreaseSDefOption)
+    "DecreaseDef" -> Ok(calcs.DecreaseDefOption)
+    "DecreaseSDef" -> Ok(calcs.DecreaseSDefOption)
+    "Neutral" -> Ok(calcs.NeutralOption)
+    _ -> Error(Nil)
+  }
+}
+
 fn nature_to_string(nature: Nature) {
   case nature {
     calcs.IncreaseDef -> "IncreaseDef"
     calcs.IncreaseSDef -> "IncreaseSDef"
     calcs.Neutral -> "Neutral"
     _ -> "How did that happen?!"
-  }
-}
-
-fn string_to_nature(s: String) {
-  case s {
-    "Find Best" -> calcs.FindBestOption
-    "IncreaseDef" -> calcs.IncreaseDefOption
-    "IncreaseSDef" -> calcs.IncreaseSDefOption
-    _ -> calcs.NeutralOption
   }
 }
 
@@ -168,11 +228,15 @@ fn td_input(stat) {
   ])
 }
 
-fn td_input_editable(stat, update_msg) {
+fn td_input_editable(stat, min, max, update_msg) {
   html.td([attribute.class("border-none")], [
     html.input([
       attribute.class("input"),
       event.on_input(update_msg),
+      // attribute.type_("number"),
+      attribute.min(min),
+      attribute.max(max),
+      attribute.required(True),
       attribute.value(int.to_string(stat)),
     ]),
   ])
@@ -230,25 +294,50 @@ fn view(model: Model) -> Element(Msg) {
                     td_text("Base HP:"),
                     td_input(model.config.base_hp),
                     td_text("IVs HP:"),
-                    td_input_editable(model.config.hp_iv, UserUpdatedHPIVs),
+                    td_input_editable(
+                      model.config.hp_iv,
+                      "0",
+                      "31",
+                      UserUpdatedHPIVs,
+                    ),
                   ]),
                   html.tr([], [
                     td_text("Base Def:"),
                     td_input(model.config.base_def),
                     td_text("IVs Def:"),
-                    td_input_editable(model.config.def_iv, UserUpdatedDefIVs),
+                    td_input_editable(
+                      model.config.def_iv,
+                      "0",
+                      "31",
+                      UserUpdatedDefIVs,
+                    ),
                   ]),
                   html.tr([], [
                     td_text("Base SDef:"),
                     td_input(model.config.base_sdef),
                     td_text("IVs SDef:"),
-                    td_input_editable(model.config.sdef_iv, UserUpdatedSDefIVs),
+                    td_input_editable(
+                      model.config.sdef_iv,
+                      "0",
+                      "31",
+                      UserUpdatedSDefIVs,
+                    ),
                   ]),
                   html.tr([], [
                     td_text("EVs left:"),
-                    td_input_editable(model.config.evs_left, UserUpdatedEVsLeft),
+                    td_input_editable(
+                      model.config.evs_left,
+                      "0",
+                      "508",
+                      UserUpdatedEVsLeft,
+                    ),
                     td_text("Level:"),
-                    td_input_editable(model.config.level, UserUpdatedLevel),
+                    td_input_editable(
+                      model.config.level,
+                      "0",
+                      "100",
+                      UserUpdatedLevel,
+                    ),
                   ]),
                   html.tr([], [
                     td_text("Nature:"),
@@ -258,7 +347,7 @@ fn view(model: Model) -> Element(Msg) {
                           attribute.class(""),
                           event.on_change(UserUpdatedNature),
                         ],
-                        render_nature(model.config.nature),
+                        render_nature(model.config.nature_option),
                       ),
                     ]),
                   ]),
@@ -339,13 +428,23 @@ fn view(model: Model) -> Element(Msg) {
                   td_text("Def:"),
                   td_text(int.to_string(model.results.def_evs)),
                   td_text(int.to_string(model.results.def_stat)),
-                  td_text(int.to_string(model.results.hp_stat)),
+                  td_text(
+                    float.to_string(float.to_precision(
+                      model.results.def_tier,
+                      2,
+                    )),
+                  ),
                 ]),
                 html.tr([], [
                   td_text("SDef:"),
                   td_text(int.to_string(model.results.sdef_evs)),
                   td_text(int.to_string(model.results.sdef_stat)),
-                  td_text(int.to_string(-1)),
+                  td_text(
+                    float.to_string(float.to_precision(
+                      model.results.sdef_tier,
+                      2,
+                    )),
+                  ),
                 ]),
                 html.tr([], [
                   td_text("Nature:"),

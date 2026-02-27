@@ -23,7 +23,7 @@ pub fn calc_results_test() {
       sdef_iv: 31,
       evs_left: 508,
       level: 100,
-      nature: calcs.NeutralOption,
+      nature_option: calcs.NeutralOption,
       bias: 50,
     )
 
@@ -38,6 +38,8 @@ pub fn calc_results_test() {
       def_stat: 129,
       sdef_stat: 147,
       nature: calcs.Neutral,
+      def_tier: 109.08747305614058,
+      sdef_tier: 110.45794767580063,
     )
 }
 
