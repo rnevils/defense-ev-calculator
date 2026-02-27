@@ -232,6 +232,7 @@ fn td_input_editable(stat, min, max, update_msg) {
   html.td([attribute.class("border-none")], [
     html.input([
       attribute.class("input"),
+      // attribute.class("input max-w-[50px]"),
       event.on_input(update_msg),
       // attribute.type_("number"),
       attribute.min(min),
@@ -247,214 +248,258 @@ fn td_text(text: String) {
 }
 
 fn view(model: Model) -> Element(Msg) {
-  html.div([attribute.class("font-mono")], [
-    html.div(
-      [attribute.class("navbar")],
-      // [attribute.class("navbar bg-primary text-primary-content shadow-sm")],
-      [
-        html.div([attribute.class("flex-1 text-4xl")], [
-          html.text("Defense EV Calculator"),
-        ]),
-        html.div([attribute.class("flex-none")], [
-          // html.button([attribute.class("btn btn-square btn-ghost")], []),
-          html.input([
-            attribute.class("toggle theme-controller al"),
-            attribute.value("light"),
-            attribute.type_("checkbox"),
-          ]),
-        ]),
-      ],
-    ),
-
-    // html.h1([attribute.class("text-4xl")], [
-    //   html.text("Defense EV Calculator"),
-    // ]),
-    html.div([attribute.class("flex")], [
+  html.div(
+    [attribute.class("font-mono p-4 w-full max-w-5xl mx-auto space-y-8")],
+    [
       html.div(
+        [attribute.id("navbar"), attribute.class("navbar")],
+        // [attribute.class("navbar bg-primary text-primary-content shadow-sm")],
         [
-          attribute.id("config"),
-          attribute.class("bg-base-300 rounded-box shadow-md p-4"),
-        ],
-        [
-          // html.div([attribute.class("p-32 w-full max-w-2xl mx-auto space-y-4")], [
-          html.div([], [
-            html.select(
-              [attribute.class("select"), event.on_change(UserUpdatedPokemon)],
-              render_pokemon_names(model.config.pokemon_name),
-            ),
+          html.div([attribute.class("flex-1 text-4xl")], [
+            html.text("Defense EV Calculator"),
           ]),
-          html.div(
-            [
-              attribute.class("overflow-x-auto "),
-            ],
-            [
-              html.table([attribute.class("table")], [
+          html.div([attribute.class("flex-none")], [
+            // html.button([attribute.class("btn btn-square btn-ghost")], []),
+            html.input([
+              attribute.class("toggle theme-controller al"),
+              attribute.value("light"),
+              attribute.type_("checkbox"),
+            ]),
+          ]),
+        ],
+      ),
+      html.div([attribute.class("grid grid-cols-2 gap-20")], [
+        html.div(
+          [
+            attribute.id("config"),
+            attribute.class("bg-base-300 rounded-box shadow-md p-4"),
+            // attribute.class("bg-base-300 rounded-box shadow-md p-4"),
+          ],
+          [
+            // html.div([attribute.class("p-32 w-full max-w-2xl mx-auto space-y-4")], [
+            html.div([], [
+              html.select(
+                [attribute.class("select"), event.on_change(UserUpdatedPokemon)],
+                render_pokemon_names(model.config.pokemon_name),
+              ),
+            ]),
+            html.div(
+              [
+                attribute.class("overflow-x-auto "),
+              ],
+              [
+                html.table([attribute.class("table table-sm")], [
+                  html.tbody([], [
+                    html.tr([], [
+                      td_text("Base HP:"),
+                      td_input(model.config.base_hp),
+                      td_text("IVs HP:"),
+                      td_input_editable(
+                        model.config.hp_iv,
+                        "0",
+                        "31",
+                        UserUpdatedHPIVs,
+                      ),
+                    ]),
+                    html.tr([], [
+                      td_text("Base Def:"),
+                      td_input(model.config.base_def),
+                      td_text("IVs Def:"),
+                      td_input_editable(
+                        model.config.def_iv,
+                        "0",
+                        "31",
+                        UserUpdatedDefIVs,
+                      ),
+                    ]),
+                    html.tr([], [
+                      td_text("Base SDef:"),
+                      td_input(model.config.base_sdef),
+                      td_text("IVs SDef:"),
+                      td_input_editable(
+                        model.config.sdef_iv,
+                        "0",
+                        "31",
+                        UserUpdatedSDefIVs,
+                      ),
+                    ]),
+                    html.tr([], [
+                      td_text("EVs left:"),
+                      td_input_editable(
+                        model.config.evs_left,
+                        "0",
+                        "508",
+                        UserUpdatedEVsLeft,
+                      ),
+                      td_text("Level:"),
+                      td_input_editable(
+                        model.config.level,
+                        "0",
+                        "100",
+                        UserUpdatedLevel,
+                      ),
+                    ]),
+                    html.tr([], [
+                      td_text("Nature:"),
+                      html.td([], [
+                        html.select(
+                          [
+                            attribute.class(""),
+                            event.on_change(UserUpdatedNature),
+                          ],
+                          render_nature(model.config.nature_option),
+                        ),
+                      ]),
+                    ]),
+
+                    html.tr([attribute.class("")], [
+                      html.td([attribute.class("text-left border-none")], [
+                        html.text("SDef"),
+                      ]),
+                      html.td([attribute.class("text-center")], [
+                        html.text("Bias"),
+                      ]),
+                      html.td([attribute.class("text-right")], [
+                        html.text("Def"),
+                      ]),
+                    ]),
+                    html.tr([attribute.class("")], [
+                      html.td([attribute.class("text-left")], [
+                        html.input([
+                          attribute.class("input input-sm "),
+                          attribute.disabled(True),
+                          attribute.value(
+                            int.to_string(100 - model.config.bias) <> "%",
+                          ),
+                        ]),
+                      ]),
+                      html.td([attribute.class("text-center")], [
+                        html.input([
+                          attribute.class("range range-xs"),
+                          event.on_input(UserUpdatedBias),
+                          attribute.value(int.to_string(model.config.bias)),
+                          attribute.min("0"),
+                          attribute.max("100"),
+                          attribute.step("1"),
+                          attribute.name("bias"),
+                          attribute.id("bias"),
+                          attribute.type_("range"),
+                        ]),
+                      ]),
+                      html.td([attribute.class("text-right")], [
+                        html.input([
+                          attribute.class("input input-sm"),
+                          attribute.disabled(True),
+
+                          attribute.value(
+                            int.to_string(model.config.bias) <> "%",
+                          ),
+                        ]),
+                      ]),
+                    ]),
+                  ]),
+                ]),
+              ],
+            ),
+          ],
+        ),
+        html.div(
+          [
+            attribute.id("results"),
+            attribute.class("bg-base-200 rounded-box shadow-md p-4"),
+          ],
+          [
+            html.div([attribute.class("overflow-x-auto ")], [
+              html.table([attribute.class("table table-sm")], [
+                html.thead([], [
+                  html.tr([], [
+                    html.th([], []),
+                    html.th([], [html.text("EVs")]),
+                    html.th([], [html.text("Stat")]),
+                    html.th([], [html.text("Tier")]),
+                  ]),
+                ]),
                 html.tbody([], [
                   html.tr([], [
-                    td_text("Base HP:"),
-                    td_input(model.config.base_hp),
-                    td_text("IVs HP:"),
-                    td_input_editable(
-                      model.config.hp_iv,
-                      "0",
-                      "31",
-                      UserUpdatedHPIVs,
+                    td_text("HP:"),
+                    td_text(int.to_string(model.results.hp_evs)),
+                    td_text(int.to_string(model.results.hp_stat)),
+                    td_text("N/A"),
+                  ]),
+                  html.tr([], [
+                    td_text("Def:"),
+                    td_text(int.to_string(model.results.def_evs)),
+                    td_text(int.to_string(model.results.def_stat)),
+                    td_text(
+                      float.to_string(float.to_precision(
+                        model.results.def_tier,
+                        2,
+                      )),
                     ),
                   ]),
                   html.tr([], [
-                    td_text("Base Def:"),
-                    td_input(model.config.base_def),
-                    td_text("IVs Def:"),
-                    td_input_editable(
-                      model.config.def_iv,
-                      "0",
-                      "31",
-                      UserUpdatedDefIVs,
-                    ),
-                  ]),
-                  html.tr([], [
-                    td_text("Base SDef:"),
-                    td_input(model.config.base_sdef),
-                    td_text("IVs SDef:"),
-                    td_input_editable(
-                      model.config.sdef_iv,
-                      "0",
-                      "31",
-                      UserUpdatedSDefIVs,
-                    ),
-                  ]),
-                  html.tr([], [
-                    td_text("EVs left:"),
-                    td_input_editable(
-                      model.config.evs_left,
-                      "0",
-                      "508",
-                      UserUpdatedEVsLeft,
-                    ),
-                    td_text("Level:"),
-                    td_input_editable(
-                      model.config.level,
-                      "0",
-                      "100",
-                      UserUpdatedLevel,
+                    td_text("SDef:"),
+                    td_text(int.to_string(model.results.sdef_evs)),
+                    td_text(int.to_string(model.results.sdef_stat)),
+                    td_text(
+                      float.to_string(float.to_precision(
+                        model.results.sdef_tier,
+                        2,
+                      )),
                     ),
                   ]),
                   html.tr([], [
                     td_text("Nature:"),
-                    html.td([], [
-                      html.select(
-                        [
-                          attribute.class(""),
-                          event.on_change(UserUpdatedNature),
-                        ],
-                        render_nature(model.config.nature_option),
-                      ),
-                    ]),
-                  ]),
-                ]),
-              ]),
-            ],
-          ),
-          html.div([attribute.class("px-4")], [
-            html.div([attribute.class("flex flex-col items-center")], [
-              html.div([attribute.class("flex justify-between w-full")], [
-                html.text("SDef"),
-                html.label([attribute.class(""), attribute.for("bias")], [
-                  html.text("Bias:"),
-                ]),
-                html.text("Def"),
-              ]),
-              html.div([attribute.class("flex justify-between w-full")], [
-                html.span([attribute.class(""), attribute.id("bias")], [
-                  html.input([
-                    attribute.class("input input-sm "),
-                    attribute.disabled(True),
-                    attribute.value(
-                      int.to_string(100 - model.config.bias) <> "%",
-                    ),
-                  ]),
-                ]),
-                html.input([
-                  attribute.class("range range-xs"),
-                  event.on_input(UserUpdatedBias),
-                  attribute.value(int.to_string(model.config.bias)),
-                  attribute.min("0"),
-                  attribute.max("100"),
-                  attribute.step("1"),
-                  attribute.name("bias"),
-                  attribute.id("bias"),
-                  attribute.type_("range"),
-                ]),
-                // html.span([attribute.id("bias")], [
-                //   html.text(float.to_string(model.config.bias)),
-                // ]),
-                html.span([attribute.id("bias")], [
-                  html.input([
-                    attribute.class("input input-xs"),
-                    attribute.disabled(True),
-
-                    attribute.value(int.to_string(model.config.bias) <> "%"),
+                    td_text(nature_to_string(model.results.nature)),
                   ]),
                 ]),
               ]),
             ]),
+          ],
+        ),
+      ]),
+      html.div([attribute.id("reference")], [
+        html.text("Reference:"),
+        html.ul([attribute.class("list-disc pl-6")], [
+          html.li([], [
+            html.a(
+              [
+                attribute.class("link link-primary"),
+                attribute.href(
+                  "https://www.smogon.com/dp/articles/maximizing_defenses",
+                ),
+              ],
+              [
+                html.text("Smogon article about maximizing defense"),
+              ],
+            ),
           ]),
-        ],
-      ),
-      html.div(
-        [
-          attribute.id("results"),
-          attribute.class(""),
-        ],
-        [
-          html.div([attribute.class("overflow-x-auto ")], [
-            html.table([attribute.class("table")], [
-              html.thead([], [
-                html.tr([], [
-                  html.th([], []),
-                  html.th([], [html.text("EVs")]),
-                  html.th([], [html.text("Stat")]),
-                  html.th([], [html.text("Tier")]),
-                ]),
-              ]),
-              html.tbody([], [
-                html.tr([], [
-                  td_text("HP:"),
-                  td_text(int.to_string(model.results.hp_evs)),
-                  td_text(int.to_string(model.results.hp_stat)),
-                  td_text("N/A"),
-                ]),
-                html.tr([], [
-                  td_text("Def:"),
-                  td_text(int.to_string(model.results.def_evs)),
-                  td_text(int.to_string(model.results.def_stat)),
-                  td_text(
-                    float.to_string(float.to_precision(
-                      model.results.def_tier,
-                      2,
-                    )),
-                  ),
-                ]),
-                html.tr([], [
-                  td_text("SDef:"),
-                  td_text(int.to_string(model.results.sdef_evs)),
-                  td_text(int.to_string(model.results.sdef_stat)),
-                  td_text(
-                    float.to_string(float.to_precision(
-                      model.results.sdef_tier,
-                      2,
-                    )),
-                  ),
-                ]),
-                html.tr([], [
-                  td_text("Nature:"),
-                  td_text(nature_to_string(model.results.nature)),
-                ]),
-              ]),
-            ]),
+          html.li([], [
+            html.a(
+              [
+                attribute.class("link link-primary"),
+                attribute.href(
+                  "https://www.smogon.com/forums/threads/defense-and-special-defense-tiers.24931/",
+                ),
+              ],
+              [
+                html.text("Smogon forum post about defensive tiers"),
+              ],
+            ),
           ]),
-        ],
-      ),
-    ]),
-  ])
+          html.li([], [
+            html.a(
+              [
+                attribute.class("link link-primary"),
+                attribute.href("https://pokestudio.altervista.org/defevs.php"),
+              ],
+              [
+                html.text("Original Defense EV Calculator"),
+              ],
+            ),
+          ]),
+        ]),
+      ]),
+    ],
+  )
 }
