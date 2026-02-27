@@ -27,3 +27,4 @@ minify = true
 
 [tools.lustre.html]
 title = "Defense EV Calculator"
+links = [{rel = "icon", href = "/favicon.ico"}]

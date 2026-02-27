@@ -35,6 +35,8 @@ jobs:
       - name: Fix asset paths for GitHub Pages
         run: |
           sed -i 's|src="/defense_ev_calculator.js"|src="/defense-ev-calculator/defense_ev_calculator.js"|' dist/index.html
+          sed -i 's|href="/defense_ev_calculator.css"|href="/defense-ev-calculator/defense_ev_calculator.css"|' dist/index.html
+          sed -i 's|href="/favicon.ico"|href="/defense-ev-calculator/favicon.ico"|' dist/index.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

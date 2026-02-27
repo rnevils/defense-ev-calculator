@@ -64,7 +64,14 @@ fn update(model: Model, msg: Msg) -> Model {
       calcs.PkmnConfig(..model.config, nature:)
     }
     UserUpdatedLevel(level_string) -> {
-      todo
+      case int.parse(level_string) {
+        Ok(level) ->
+          case level >= 1 && level <= 100 {
+            True -> calcs.PkmnConfig(..model.config, level:)
+            False -> model.config
+          }
+        Error(_) -> model.config
+      }
     }
     UserUpdatedHPIVs(_) -> todo
     UserUpdatedDefIVs(_) -> todo
