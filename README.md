@@ -1,6 +1,6 @@
 # Defense EV Calculator
 
-Simple web app for calculating EVs that minimizing the ***Biased Overall Harm*** formula found in this smogon article: https://www.smogon.com/dp/articles/maximizing_defenses
+Simple web app for calculating EVs that minimize the ***Biased Overall Harm*** formula found in this smogon article: https://www.smogon.com/dp/articles/maximizing_defenses
 
 Also displays the calculated ***Defensive Tier*** as defined in this smogon forum post: https://www.smogon.com/forums/threads/defense-and-special-defense-tiers.24931/
 
