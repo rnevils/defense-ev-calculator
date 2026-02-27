@@ -1,9 +1,7 @@
 import calcs.{type Nature, type NatureOption, type PkmnConfig, type Results}
 import gleam/dict.{type Dict}
-import gleam/float
 import gleam/int
 import gleam/list
-import gleam/result
 import lustre
 import lustre/attribute
 import lustre/element.{type Element}
@@ -93,16 +91,6 @@ fn set_config(pokemon: Pokemon) {
   )
 }
 
-fn get_float(s: String) {
-  case s {
-    "1" -> 1.0
-    "0" -> 0.0
-    _ ->
-      float.parse(s)
-      |> result.unwrap(0.0)
-  }
-}
-
 fn render_pokemon_names(pokemon_name: String) {
   list.map(pokedex.pokedex, fn(pkmn) {
     case pokemon_name == pkmn.0 {
@@ -162,10 +150,6 @@ fn string_to_nature(s: String) {
     "IncreaseSDef" -> calcs.IncreaseSDefOption
     _ -> calcs.NeutralOption
   }
-}
-
-fn redner_aa() {
-  todo
 }
 
 fn td_input(stat) {
