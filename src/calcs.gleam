@@ -43,7 +43,7 @@ pub type PkmnConfig {
     evs_left: Int,
     level: Int,
     nature: NatureOption,
-    bias: Float,
+    bias: Int,
   )
 }
 
@@ -90,6 +90,8 @@ fn run_calc_results(initial: #(Float, Results), nature, config: PkmnConfig) {
     DecreaseSDef -> #(10, 9)
   }
 
+  let bias_float = int.to_float(config.bias) /. 100.0
+
   let n = config.evs_left / 4
   let def_max = int.min(63, n)
 
@@ -126,7 +128,7 @@ fn run_calc_results(initial: #(Float, Results), nature, config: PkmnConfig) {
               int.to_float(def_stat),
               int.to_float(sdef_stat),
               int.to_float(hp_stat),
-              config.bias,
+              bias_float,
             )
 
           case overall_harm <. acc.0 {

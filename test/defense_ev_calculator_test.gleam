@@ -24,7 +24,7 @@ pub fn calc_results_test() {
       evs_left: 508,
       level: 100,
       nature: calcs.NeutralOption,
-      bias: 0.5,
+      bias: 50,
     )
 
   let output = calcs.calc_results(input)

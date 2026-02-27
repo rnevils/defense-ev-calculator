@@ -4,6 +4,7 @@
 erl_crash.dump
 env/
 .DS_Store
+src/vendor/
 
 #Added automatically by Lustre Dev Tools
 /.lustre
