@@ -229,7 +229,7 @@ fn td_input(stat) {
   html.td([attribute.class("border-none")], [
     html.input([
       attribute.class("input input-sm"),
-      // attribute.class("input w-[50px]"),
+      attribute.class("input w-[50px]"),
       attribute.disabled(True),
       attribute.value(int.to_string(stat)),
     ]),
@@ -240,7 +240,7 @@ fn td_input_editable(stat, min, max, update_msg) {
   html.td([attribute.class("border-none")], [
     html.input([
       attribute.class("input input-sm"),
-      // attribute.class("input w-[50px]"),
+      attribute.class("input w-[50px]"),
       event.on_input(update_msg),
       // attribute.type_("number"),
       attribute.maxlength(3),
@@ -286,27 +286,56 @@ fn view(model: Model) -> Element(Msg) {
           html.div(
             [
               attribute.id("config"),
-              attribute.class("bg-base-300 rounded-box shadow-md p-4"),
+              attribute.class("bg-base-200 rounded-box shadow-md p-4"),
               // attribute.class("bg-base-300 rounded-box shadow-md p-4"),
             ],
             [
               // html.div([attribute.class("p-32 w-full max-w-2xl mx-auto space-y-4")], [
-              html.div([], [
-                html.select(
-                  [
-                    attribute.class("select"),
-                    event.on_change(UserUpdatedPokemon),
-                  ],
-                  render_pokemon_names(model.config.pokemon_name),
-                ),
-              ]),
+              // html.div([], [
+              //   html.select(
+              //     [
+              //       attribute.class("select select-xs"),
+              //       event.on_change(UserUpdatedPokemon),
+              //     ],
+              //     render_pokemon_names(model.config.pokemon_name),
+              //   ),
+              // ]),
               html.div(
                 [
                   attribute.class("overflow-x-auto "),
                 ],
                 [
-                  html.table([attribute.class("table table-sm")], [
+                  html.table([attribute.class("table table-xs")], [
                     html.tbody([], [
+                      html.tr([], [
+                        html.select(
+                          [
+                            attribute.class("select select-xs"),
+                            event.on_change(UserUpdatedPokemon),
+                          ],
+                          render_pokemon_names(model.config.pokemon_name),
+                        ),
+                      ]),
+                      html.tr([], [
+                        html.td([attribute.class("border-none")], [
+                          html.select(
+                            [
+                              attribute.class("select select-xs"),
+                              event.on_change(UserUpdatedPokemon),
+                            ],
+                            render_pokemon_names(model.config.pokemon_name),
+                          ),
+                        ]),
+                        // td_text("Base HP:"),
+                      // td_input(model.config.base_hp),
+                      // td_text("IVs HP:"),
+                      // td_input_editable(
+                      //   model.config.hp_iv,
+                      //   "0",
+                      //   "31",
+                      //   UserUpdatedHPIVs,
+                      // ),
+                      ]),
                       html.tr([], [
                         td_text("Base HP:"),
                         td_input(model.config.base_hp),
@@ -363,7 +392,7 @@ fn view(model: Model) -> Element(Msg) {
                           [
                             html.select(
                               [
-                                attribute.class(""),
+                                attribute.class("input input-xs"),
                                 event.on_change(UserUpdatedNature),
                               ],
                               render_nature(model.config.nature_option),
@@ -384,19 +413,26 @@ fn view(model: Model) -> Element(Msg) {
                         ]),
                       ]),
                       html.tr([attribute.class("")], [
-                        html.td([attribute.class("text-left")], [
-                          html.input([
-                            attribute.class("input input-sm "),
-                            attribute.class("input w-[60px]"),
-                            attribute.disabled(True),
-                            attribute.value(
-                              int.to_string(100 - model.config.bias) <> "%",
-                            ),
-                          ]),
+                        html.td([attribute.class("text-left border-none")], [
+                          html.text(
+                            int.to_string(100 - model.config.bias) <> "%",
+                          ),
                         ]),
+                        // html.td([attribute.class("text-left")], [
+                        //   html.input([
+                        //     attribute.class("input input-sm "),
+                        //     attribute.class("input w-[60px]"),
+                        //     attribute.disabled(True),
+                        //     attribute.value(
+                        //       int.to_string(100 - model.config.bias) <> "%",
+                        //     ),
+                        //   ]),
+                        // ]),
                         html.td([attribute.class("text-center")], [
                           html.input([
-                            attribute.class("range range-neutral range-xs"),
+                            attribute.class(
+                              "range range-primary-content range-xs",
+                            ),
                             event.on_input(UserUpdatedBias),
                             attribute.value(int.to_string(model.config.bias)),
                             attribute.min("0"),
@@ -436,11 +472,12 @@ fn view(model: Model) -> Element(Msg) {
           html.div(
             [
               attribute.id("results"),
-              attribute.class("bg-base-200 rounded-box shadow-md p-4"),
+              attribute.class("bg-base-300 rounded-box shadow-md p-4"),
+              // attribute.class("bg-secondary rounded-box shadow-md p-4"),
             ],
             [
               html.div([attribute.class("overflow-x-auto ")], [
-                html.table([attribute.class("table table")], [
+                html.table([attribute.class("table")], [
                   html.thead([], [
                     html.tr([], [
                       html.th([], []),
@@ -529,7 +566,7 @@ fn view(model: Model) -> Element(Msg) {
                 attribute.href("https://pokestudio.altervista.org/defevs.php"),
               ],
               [
-                html.text("Original Defense EV Calculator"),
+                html.text("PHP Defense EV Calculator"),
               ],
             ),
           ]),
