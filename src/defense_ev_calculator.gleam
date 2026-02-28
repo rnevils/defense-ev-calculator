@@ -396,7 +396,7 @@ fn view(model: Model) -> Element(Msg) {
                         ]),
                         html.td([attribute.class("text-center")], [
                           html.input([
-                            attribute.class("range range-xs"),
+                            attribute.class("range range-neutral range-xs"),
                             event.on_input(UserUpdatedBias),
                             attribute.value(int.to_string(model.config.bias)),
                             attribute.min("0"),
