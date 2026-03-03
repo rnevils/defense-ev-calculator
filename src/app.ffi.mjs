@@ -1,0 +1,18 @@
+import { Ok, Error } from "./gleam.mjs";
+
+export function get_localstorage(key) {
+  const json = window.localStorage.getItem(key);
+
+  // Gleam's `Nil` value is represented as `undefined` in JavaScript.
+  if (json === null) return new Error(undefined);
+
+  try {
+    return new Ok(JSON.parse(json));
+  } catch {
+    return new Error(undefined);
+  }
+}
+
+export function set_localstorage(key, json) {
+  window.localStorage.setItem(key, json);
+}
