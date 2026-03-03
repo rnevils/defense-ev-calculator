@@ -394,7 +394,7 @@ fn view(model: Model) -> Element(Msg) {
       ),
       html.div(
         [
-          attribute.class("grid grid-cols-1 md:grid-cols-2 gap-20"),
+          attribute.class("grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-20"),
           // attribute.class("grid grid-cols-1 md:grid-cols-2 gap-20"),
         ],
         [
@@ -442,7 +442,9 @@ fn view(model: Model) -> Element(Msg) {
                           [
                             html.select(
                               [
-                                attribute.class("select select-sm"),
+                                attribute.class(
+                                  "select select-sm max-w-[167px]",
+                                ),
                                 event.on_change(fn(s) {
                                   ConfigMsg(config_msg: UserUpdatedPokemon(s))
                                 }),
@@ -504,11 +506,16 @@ fn view(model: Model) -> Element(Msg) {
                       html.tr([], [
                         td_text("Nature:"),
                         html.td(
-                          [attribute.class("border-none"), attribute.colspan(2)],
+                          [
+                            attribute.class("border-none"),
+                            attribute.colspan(3),
+                          ],
                           [
                             html.select(
                               [
-                                attribute.class(""),
+                                attribute.class(
+                                  "select select-sm max-w-[130px]",
+                                ),
                                 event.on_change(fn(s) {
                                   ConfigMsg(config_msg: UserUpdatedNature(s))
                                 }),
@@ -523,9 +530,15 @@ fn view(model: Model) -> Element(Msg) {
                         html.td([attribute.class("text-right border-none")], [
                           html.text("SDef"),
                         ]),
-                        html.td([attribute.class("text-center border-none")], [
-                          html.text("Bias"),
-                        ]),
+                        html.td(
+                          [
+                            attribute.class("text-center border-none"),
+                            attribute.colspan(2),
+                          ],
+                          [
+                            html.text("Bias"),
+                          ],
+                        ),
                         html.td([attribute.class("text-left border-none")], [
                           html.text("Def"),
                         ]),
@@ -536,44 +549,62 @@ fn view(model: Model) -> Element(Msg) {
                         //     int.to_string(100 - model.config.bias) <> "%",
                         //   ),
                         // ]),
-                        html.td([attribute.class("text-right")], [
-                          html.input([
-                            attribute.class("input input-sm text-center"),
-                            attribute.class("input w-[60px]"),
-                            attribute.disabled(True),
-                            attribute.value(
-                              int.to_string(100 - model.config.bias) <> "%",
-                            ),
-                          ]),
-                        ]),
-                        html.td([attribute.class("text-center")], [
-                          html.input([
-                            attribute.class(
-                              "range range-primary-content range-xs",
-                            ),
-                            event.on_input(fn(s) {
-                              ConfigMsg(config_msg: UserUpdatedBias(s))
-                            }),
-                            attribute.value(int.to_string(model.config.bias)),
-                            attribute.min("0"),
-                            attribute.max("100"),
-                            attribute.step("1"),
-                            attribute.name("bias"),
-                            attribute.id("bias"),
-                            attribute.type_("range"),
-                          ]),
-                        ]),
+                        html.td(
+                          [
+                            attribute.class("text-right border-none"),
+                          ],
+                          [
+                            html.input([
+                              attribute.class(
+                                "input w-[60px] input-sm text-center",
+                              ),
+
+                              attribute.disabled(True),
+                              attribute.value(
+                                int.to_string(100 - model.config.bias) <> "%",
+                              ),
+                            ]),
+                          ],
+                        ),
+                        html.td(
+                          [
+                            attribute.class("text-center border-none"),
+                            attribute.colspan(2),
+                          ],
+                          [
+                            html.input([
+                              attribute.class(
+                                "range range-primary-content range-xs",
+                              ),
+                              event.on_input(fn(s) {
+                                ConfigMsg(config_msg: UserUpdatedBias(s))
+                              }),
+                              attribute.value(int.to_string(model.config.bias)),
+                              attribute.min("0"),
+                              attribute.max("100"),
+                              attribute.step("1"),
+                              attribute.name("bias"),
+                              attribute.id("bias"),
+                              attribute.type_("range"),
+                            ]),
+                          ],
+                        ),
 
                         html.td([attribute.class("text-left border-none")], [
                           html.input([
-                            attribute.class("input input-sm text-center"),
-                            attribute.class("input w-[60px]"),
+                            attribute.class(
+                              "input w-[60px] input-sm text-center",
+                            ),
+
                             attribute.disabled(True),
                             attribute.value(
                               int.to_string(model.config.bias) <> "%",
                             ),
                           ]),
                         ]),
+                      ]),
+                      html.tr([], [
+                        html.td([attribute.colspan(3)], []),
                         html.td([], [
                           html.button(
                             [

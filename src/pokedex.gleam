@@ -253,6 +253,21 @@ pub const pokedex = [
     Pokemon(name: "Deoxys", stats: BaseStats(hp: 50, def: 50, sdef: 50)),
   ),
   #(
+    "Deoxys Attack",
+    Pokemon(name: "Deoxys Attack", stats: BaseStats(hp: 50, def: 20, sdef: 20)),
+  ),
+  #(
+    "Deoxys Defense",
+    Pokemon(
+      name: "Deoxys Defense",
+      stats: BaseStats(hp: 50, def: 160, sdef: 160),
+    ),
+  ),
+  #(
+    "Deoxys Speed",
+    Pokemon(name: "Deoxys Speed", stats: BaseStats(hp: 50, def: 90, sdef: 90)),
+  ),
+  #(
     "Clamperl",
     Pokemon(name: "Clamperl", stats: BaseStats(hp: 35, def: 85, sdef: 55)),
   ),
