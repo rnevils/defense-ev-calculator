@@ -4,6 +4,7 @@ import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
 import gleam/float
 import gleam/int
+import gleam/json
 import gleam/list
 import gleam/pair
 import gleam/result
@@ -24,13 +25,18 @@ pub fn main() {
 }
 
 type Model {
-  Model(config: PkmnConfig, results: Results, data: Dict(String, Pokemon), theme)
+  Model(
+    config: PkmnConfig,
+    results: Results,
+    data: Dict(String, Pokemon),
+    light_theme: Bool,
+  )
 }
 
-type Theme {
-  Dark
-  Light
-}
+// type Theme {
+//   Dark
+//   Light
+// }
 
 fn init(_args) -> #(Model, Effect(Msg)) {
   let data = dict.from_list(pokedex.pokedex)
@@ -42,7 +48,10 @@ fn init(_args) -> #(Model, Effect(Msg)) {
   let config = set_config(pokemon)
   let results = calcs.calc_results(config)
 
-  #(Model(config:, results:, data:), get_theme())
+  // let theme = Dark
+
+  // #(Model(config:, results:, data:), get_theme())
+  #(Model(config:, results:, data:, light_theme: False), get_theme())
 }
 
 type ConfigUpdate {
@@ -58,8 +67,8 @@ type ConfigUpdate {
 }
 
 type Msg {
-  LocalStorageReturnedTheme(Result(Theme, Nil))
-  UserToggledTheme
+  LocalStorageReturnedTheme(Result(Bool, Nil))
+  UserToggledTheme(Bool)
   ConfigMsg(config_msg: ConfigUpdate)
 }
 
@@ -148,8 +157,16 @@ fn validate_input(model: Model, msg: ConfigUpdate) {
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    LocalStorageReturnedTheme(_) -> todo
-    UserToggledTheme -> todo
+    LocalStorageReturnedTheme(Error(_)) -> #(model, effect.none())
+    LocalStorageReturnedTheme(Ok(light_theme)) -> {
+      #(Model(..model, light_theme:), effect.none())
+    }
+    UserToggledTheme(toggle) -> {
+      case toggle {
+        True -> #(Model(..model, light_theme: True), set_light_theme(True))
+        False -> #(Model(..model, light_theme: False), set_light_theme(False))
+      }
+    }
     ConfigMsg(config_update) -> update_config(model, config_update)
   }
 }
@@ -170,8 +187,8 @@ fn update_config(
 fn get_theme() -> Effect(Msg) {
   use dispatch <- effect.from
   let result =
-    result.try(get_localstorage("theme"), fn(dyn) {
-      case decode.run(dyn, theme_decoder()) {
+    result.try(get_localstorage("light_theme"), fn(dyn) {
+      case decode.run(dyn, decode.bool) {
         Ok(theme) -> Ok(theme)
         Error(_) -> Error(Nil)
       }
@@ -180,18 +197,38 @@ fn get_theme() -> Effect(Msg) {
   dispatch(LocalStorageReturnedTheme(result))
 }
 
-fn theme_decoder() -> decode.Decoder(Theme) {
-  use variant <- decode.then(decode.string)
-  case variant {
-    "dark" -> decode.success(Dark)
-    "light" -> decode.success(Light)
-    _ -> decode.failure(todo as "Zero value for Theme", "Theme")
-  }
-}
+// fn theme_decoder() -> decode.Decoder(Theme) {
+//   use variant <- decode.then(decode.string)
+//   case variant {
+//     "dark" -> decode.success(Dark)
+//     "light" -> decode.success(Light)
+//     // _ -> decode.failure(todo as "Zero value for Theme", "Theme")
+//     _ -> decode.success(Dark)
+//   }
+// }
 
 @external(javascript, "./app.ffi.mjs", "get_localstorage")
 fn get_localstorage(_key: String) -> Result(Dynamic, Nil) {
   Error(Nil)
+}
+
+fn set_light_theme(light_theme: Bool) -> Effect(msg) {
+  use _ <- effect.from
+  let json = json.bool(light_theme)
+
+  set_localstorage("light_theme", json.to_string(json))
+}
+
+// fn theme_to_json(theme: Theme) -> json.Json {
+//   case theme {
+//     Dark -> json.string("dark")
+//     Light -> json.string("light")
+//   }
+// }
+
+@external(javascript, "./app.ffi.mjs", "set_localstorage")
+fn set_localstorage(_key: String, _value: String) -> Nil {
+  Nil
 }
 
 fn set_config(pokemon: Pokemon) {
@@ -334,22 +371,19 @@ fn view(model: Model) -> Element(Msg) {
                       attribute.height(28),
                       attribute.width(28),
                       attribute.alt("GitHub"),
-                      attribute.src("Github_white.svg"),
+                      case model.light_theme {
+                        True -> attribute.src("Github.svg")
+                        False -> attribute.src("Github_white.svg")
+                      },
                     ]),
                   ],
                 ),
               ]),
               html.li([attribute.class("justify-center")], [
-                // html.details([], [
-                //   html.summary([], [html.text("Parent")]),
-                //   html.ul([attribute.class("bg-base-100 rounded-t-none p-2")], [
-                //     html.li([], [html.a([], [html.text("Link 1")])]),
-                //     html.li([], [html.a([], [html.text("Link 2")])]),
-                //   ]),
-                // ]),
-                // html.button([attribute.class("btn btn-square btn-ghost")], []),
                 html.input([
+                  event.on_check(UserToggledTheme),
                   attribute.class("toggle theme-controller al"),
+                  attribute.checked(model.light_theme),
                   attribute.value("light"),
                   attribute.type_("checkbox"),
                 ]),
@@ -367,7 +401,7 @@ fn view(model: Model) -> Element(Msg) {
           html.div(
             [
               attribute.id("config"),
-              attribute.class("bg-base-200 rounded-box shadow-md p-4"),
+              attribute.class("bg-base-300 rounded-box shadow-md p-4"),
               // attribute.class("bg-base-300 rounded-box shadow-md p-4"),
             ],
             [
@@ -386,34 +420,37 @@ fn view(model: Model) -> Element(Msg) {
                   attribute.class("overflow-x-auto "),
                 ],
                 [
-                  html.table([attribute.class("table table-xs")], [
+                  html.table([attribute.class("table table-sm")], [
                     html.tbody([], [
+                      // html.tr([], [
+                      //   html.select(
+                      //     [
+                      //       attribute.class("select select-xs"),
+                      //       // event.on_change(ConfigMsg(
+                      //       //   config_msg: UserUpdatedPokemon,
+                      //       // )),
+                      //       event.on_change(fn(s) {
+                      //         ConfigMsg(config_msg: UserUpdatedPokemon(s))
+                      //       }),
+                      //     ],
+                      //     render_pokemon_names(model.config.pokemon_name),
+                      //   ),
+                      // ]),
                       html.tr([], [
-                        html.select(
+                        html.td(
+                          [attribute.class("border-none"), attribute.colspan(2)],
                           [
-                            attribute.class("select select-xs"),
-                            // event.on_change(ConfigMsg(
-                            //   config_msg: UserUpdatedPokemon,
-                            // )),
-                            event.on_change(fn(s) {
-                              ConfigMsg(config_msg: UserUpdatedPokemon(s))
-                            }),
+                            html.select(
+                              [
+                                attribute.class("select select-sm"),
+                                event.on_change(fn(s) {
+                                  ConfigMsg(config_msg: UserUpdatedPokemon(s))
+                                }),
+                              ],
+                              render_pokemon_names(model.config.pokemon_name),
+                            ),
                           ],
-                          render_pokemon_names(model.config.pokemon_name),
                         ),
-                      ]),
-                      html.tr([], [
-                        html.td([attribute.class("border-none")], [
-                          html.select(
-                            [
-                              attribute.class("select select-xs"),
-                              event.on_change(fn(s) {
-                                ConfigMsg(config_msg: UserUpdatedPokemon(s))
-                              }),
-                            ],
-                            render_pokemon_names(model.config.pokemon_name),
-                          ),
-                        ]),
                         // td_text("Base HP:"),
                       // td_input(model.config.base_hp),
                       // td_text("IVs HP:"),
@@ -467,11 +504,11 @@ fn view(model: Model) -> Element(Msg) {
                       html.tr([], [
                         td_text("Nature:"),
                         html.td(
-                          [attribute.class("border-none"), attribute.colspan(3)],
+                          [attribute.class("border-none"), attribute.colspan(1)],
                           [
                             html.select(
                               [
-                                attribute.class("input input-xs"),
+                                attribute.class(""),
                                 event.on_change(fn(s) {
                                   ConfigMsg(config_msg: UserUpdatedNature(s))
                                 }),
@@ -483,32 +520,32 @@ fn view(model: Model) -> Element(Msg) {
                       ]),
 
                       html.tr([attribute.class("")], [
-                        html.td([attribute.class("text-left border-none")], [
+                        html.td([attribute.class("text-right border-none")], [
                           html.text("SDef"),
                         ]),
                         html.td([attribute.class("text-center border-none")], [
                           html.text("Bias"),
                         ]),
-                        html.td([attribute.class("text-right border-none")], [
+                        html.td([attribute.class("text-left border-none")], [
                           html.text("Def"),
                         ]),
                       ]),
                       html.tr([attribute.class("")], [
-                        html.td([attribute.class("text-left border-none")], [
-                          html.text(
-                            int.to_string(100 - model.config.bias) <> "%",
-                          ),
-                        ]),
-                        // html.td([attribute.class("text-left")], [
-                        //   html.input([
-                        //     attribute.class("input input-sm "),
-                        //     attribute.class("input w-[60px]"),
-                        //     attribute.disabled(True),
-                        //     attribute.value(
-                        //       int.to_string(100 - model.config.bias) <> "%",
-                        //     ),
-                        //   ]),
+                        // html.td([attribute.class("text-right border-none")], [
+                        //   html.text(
+                        //     int.to_string(100 - model.config.bias) <> "%",
+                        //   ),
                         // ]),
+                        html.td([attribute.class("text-right")], [
+                          html.input([
+                            attribute.class("input input-sm text-center"),
+                            attribute.class("input w-[60px]"),
+                            attribute.disabled(True),
+                            attribute.value(
+                              int.to_string(100 - model.config.bias) <> "%",
+                            ),
+                          ]),
+                        ]),
                         html.td([attribute.class("text-center")], [
                           html.input([
                             attribute.class(
@@ -526,9 +563,10 @@ fn view(model: Model) -> Element(Msg) {
                             attribute.type_("range"),
                           ]),
                         ]),
-                        html.td([attribute.class("text-right")], [
+
+                        html.td([attribute.class("text-left border-none")], [
                           html.input([
-                            attribute.class("input input-sm"),
+                            attribute.class("input input-sm text-center"),
                             attribute.class("input w-[60px]"),
                             attribute.disabled(True),
                             attribute.value(
@@ -555,7 +593,7 @@ fn view(model: Model) -> Element(Msg) {
           html.div(
             [
               attribute.id("results"),
-              attribute.class("bg-base-300 rounded-box shadow-md p-4"),
+              attribute.class("bg-base-200 rounded-box shadow-md p-4"),
               // attribute.class("bg-secondary rounded-box shadow-md p-4"),
             ],
             [
