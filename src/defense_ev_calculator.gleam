@@ -24,7 +24,7 @@ pub fn main() {
 }
 
 type Model {
-  Model(config: PkmnConfig, results: Results, data: Dict(String, Pokemon))
+  Model(config: PkmnConfig, results: Results, data: Dict(String, Pokemon), theme)
 }
 
 type Theme {
