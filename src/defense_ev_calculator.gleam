@@ -372,8 +372,8 @@ fn view(model: Model) -> Element(Msg) {
                       attribute.width(28),
                       attribute.alt("GitHub"),
                       case model.light_theme {
-                        True -> attribute.src("/Github.svg")
-                        False -> attribute.src("/Github_white.svg")
+                        True -> attribute.src("GitHub.svg")
+                        False -> attribute.src("GitHub_white.svg")
                       },
                     ]),
                   ],
