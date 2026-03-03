@@ -453,15 +453,6 @@ fn view(model: Model) -> Element(Msg) {
                             ),
                           ],
                         ),
-                        // td_text("Base HP:"),
-                      // td_input(model.config.base_hp),
-                      // td_text("IVs HP:"),
-                      // td_input_editable(
-                      //   model.config.hp_iv,
-                      //   "0",
-                      //   "31",
-                      //   UserUpdatedHPIVs,
-                      // ),
                       ]),
                       html.tr([], [
                         td_text("Base HP:"),
