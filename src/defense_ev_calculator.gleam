@@ -504,7 +504,7 @@ fn view(model: Model) -> Element(Msg) {
                       html.tr([], [
                         td_text("Nature:"),
                         html.td(
-                          [attribute.class("border-none"), attribute.colspan(1)],
+                          [attribute.class("border-none"), attribute.colspan(2)],
                           [
                             html.select(
                               [
