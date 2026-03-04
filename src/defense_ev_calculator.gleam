@@ -383,7 +383,7 @@ fn view(model: Model) -> Element(Msg) {
             [
               html.div(
                 [
-                  attribute.class("overflow-x-auto "),
+                  attribute.class(""),
                 ],
                 [
                   html.table([attribute.class("table table-sm")], [
@@ -564,7 +564,7 @@ fn view(model: Model) -> Element(Msg) {
               attribute.class("bg-base-200 rounded-box shadow-md p-4"),
             ],
             [
-              html.div([attribute.class("overflow-x-auto ")], [
+              html.div([attribute.class("")], [
                 html.table([attribute.class("table")], [
                   html.thead([], [
                     html.tr([], [
