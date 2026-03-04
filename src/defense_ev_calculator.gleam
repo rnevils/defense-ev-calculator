@@ -33,11 +33,6 @@ type Model {
   )
 }
 
-// type Theme {
-//   Dark
-//   Light
-// }
-
 fn init(_args) -> #(Model, Effect(Msg)) {
   let data = dict.from_list(pokedex.pokedex)
 
@@ -48,9 +43,6 @@ fn init(_args) -> #(Model, Effect(Msg)) {
   let config = set_config(pokemon)
   let results = calcs.calc_results(config)
 
-  // let theme = Dark
-
-  // #(Model(config:, results:, data:), get_theme())
   #(Model(config:, results:, data:, light_theme: False), get_theme())
 }
 
@@ -197,16 +189,6 @@ fn get_theme() -> Effect(Msg) {
   dispatch(LocalStorageReturnedTheme(result))
 }
 
-// fn theme_decoder() -> decode.Decoder(Theme) {
-//   use variant <- decode.then(decode.string)
-//   case variant {
-//     "dark" -> decode.success(Dark)
-//     "light" -> decode.success(Light)
-//     // _ -> decode.failure(todo as "Zero value for Theme", "Theme")
-//     _ -> decode.success(Dark)
-//   }
-// }
-
 @external(javascript, "./app.ffi.mjs", "get_localstorage")
 fn get_localstorage(_key: String) -> Result(Dynamic, Nil) {
   Error(Nil)
@@ -218,13 +200,6 @@ fn set_light_theme(light_theme: Bool) -> Effect(msg) {
 
   set_localstorage("light_theme", json.to_string(json))
 }
-
-// fn theme_to_json(theme: Theme) -> json.Json {
-//   case theme {
-//     Dark -> json.string("dark")
-//     Light -> json.string("light")
-//   }
-// }
 
 @external(javascript, "./app.ffi.mjs", "set_localstorage")
 fn set_localstorage(_key: String, _value: String) -> Nil {
@@ -326,12 +301,11 @@ fn td_input(stat) {
 }
 
 fn td_input_editable(stat, min, max, update_msg) {
-  html.td([attribute.class("border-none")], [
+  html.td([attribute.class("border-none w-1/4")], [
     html.input([
       attribute.class("input input-sm"),
       attribute.class("input w-[50px]"),
       event.on_input(update_msg),
-      // attribute.type_("number"),
       attribute.maxlength(3),
       attribute.min(min),
       attribute.max(max),
@@ -342,7 +316,9 @@ fn td_input_editable(stat, min, max, update_msg) {
 }
 
 fn td_text(text: String) {
-  html.td([attribute.class("border-none")], [html.text(text)])
+  html.td([attribute.class("border-none"), attribute.class("w-1/4")], [
+    html.text(text),
+  ])
 }
 
 fn view(model: Model) -> Element(Msg) {
@@ -350,8 +326,10 @@ fn view(model: Model) -> Element(Msg) {
     [attribute.class("font-mono p-4 w-full max-w-5xl mx-auto space-y-8")],
     [
       html.div(
-        [attribute.id("navbar"), attribute.class("navbar")],
-        // [attribute.class("navbar bg-primary text-primary-content shadow-sm")],
+        [
+          attribute.id("navbar"),
+          attribute.class("navbar"),
+        ],
         [
           html.div([attribute.class("flex-1 text-4xl")], [
             html.text("Defense EV Calculator"),
@@ -395,26 +373,14 @@ fn view(model: Model) -> Element(Msg) {
       html.div(
         [
           attribute.class("grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-20"),
-          // attribute.class("grid grid-cols-1 md:grid-cols-2 gap-20"),
         ],
         [
           html.div(
             [
               attribute.id("config"),
               attribute.class("bg-base-300 rounded-box shadow-md p-4"),
-              // attribute.class("bg-base-300 rounded-box shadow-md p-4"),
             ],
             [
-              // html.div([attribute.class("p-32 w-full max-w-2xl mx-auto space-y-4")], [
-              // html.div([], [
-              //   html.select(
-              //     [
-              //       attribute.class("select select-xs"),
-              //       event.on_change(UserUpdatedPokemon),
-              //     ],
-              //     render_pokemon_names(model.config.pokemon_name),
-              //   ),
-              // ]),
               html.div(
                 [
                   attribute.class("overflow-x-auto "),
@@ -422,20 +388,6 @@ fn view(model: Model) -> Element(Msg) {
                 [
                   html.table([attribute.class("table table-sm")], [
                     html.tbody([], [
-                      // html.tr([], [
-                      //   html.select(
-                      //     [
-                      //       attribute.class("select select-xs"),
-                      //       // event.on_change(ConfigMsg(
-                      //       //   config_msg: UserUpdatedPokemon,
-                      //       // )),
-                      //       event.on_change(fn(s) {
-                      //         ConfigMsg(config_msg: UserUpdatedPokemon(s))
-                      //       }),
-                      //     ],
-                      //     render_pokemon_names(model.config.pokemon_name),
-                      //   ),
-                      // ]),
                       html.tr([], [
                         html.td(
                           [attribute.class("border-none"), attribute.colspan(2)],
@@ -535,11 +487,6 @@ fn view(model: Model) -> Element(Msg) {
                         ]),
                       ]),
                       html.tr([attribute.class("")], [
-                        // html.td([attribute.class("text-right border-none")], [
-                        //   html.text(
-                        //     int.to_string(100 - model.config.bias) <> "%",
-                        //   ),
-                        // ]),
                         html.td(
                           [
                             attribute.class("text-right border-none"),
@@ -586,7 +533,6 @@ fn view(model: Model) -> Element(Msg) {
                             attribute.class(
                               "input w-[60px] input-sm text-center",
                             ),
-
                             attribute.disabled(True),
                             attribute.value(
                               int.to_string(model.config.bias) <> "%",
@@ -616,7 +562,6 @@ fn view(model: Model) -> Element(Msg) {
             [
               attribute.id("results"),
               attribute.class("bg-base-200 rounded-box shadow-md p-4"),
-              // attribute.class("bg-secondary rounded-box shadow-md p-4"),
             ],
             [
               html.div([attribute.class("overflow-x-auto ")], [
@@ -660,7 +605,6 @@ fn view(model: Model) -> Element(Msg) {
                     ]),
                     html.tr([], [
                       td_text("Nature:"),
-                      // td_text(nature_to_string(model.results.nature)),
                       html.td(
                         [attribute.class("border-none"), attribute.colspan(3)],
                         [html.text(nature_to_string(model.results.nature))],
