@@ -33,19 +33,6 @@ type Model {
   )
 }
 
-fn init(_args) -> #(Model, Effect(Msg)) {
-  let data = dict.from_list(pokedex.pokedex)
-
-  // default to abra
-  let initial_pokemon_name = "Abra"
-  let assert Ok(pokemon) = dict.get(data, initial_pokemon_name)
-
-  let config = set_config(pokemon)
-  let results = calcs.calc_results(config)
-
-  #(Model(config:, results:, data:, light_theme: False), get_theme())
-}
-
 type ConfigUpdate {
   UserUpdatedPokemon(String)
   UserUpdatedHPIVs(String)
@@ -63,6 +50,42 @@ type Msg {
   UserToggledTheme(Bool)
   ConfigMsg(config_msg: ConfigUpdate)
 }
+
+// --------------------------------------------------------
+// --------------------------------------------------------
+// init
+fn set_config(pokemon: Pokemon) {
+  calcs.PkmnConfig(
+    pokemon_name: pokemon.name,
+    base_hp: pokemon.stats.hp,
+    base_def: pokemon.stats.def,
+    base_sdef: pokemon.stats.sdef,
+    hp_iv: 31,
+    def_iv: 31,
+    sdef_iv: 31,
+    evs_left: 508,
+    level: 100,
+    nature_option: calcs.NeutralOption,
+    bias: 50,
+  )
+}
+
+fn init(_args) -> #(Model, Effect(Msg)) {
+  let data = dict.from_list(pokedex.pokedex)
+
+  // default to abra
+  let initial_pokemon_name = "Abra"
+  let assert Ok(pokemon) = dict.get(data, initial_pokemon_name)
+
+  let config = set_config(pokemon)
+  let results = calcs.calc_results(config)
+
+  #(Model(config:, results:, data:, light_theme: False), get_theme())
+}
+
+// --------------------------------------------------------
+// --------------------------------------------------------
+// update func and helpers
 
 fn valid_evs_left_range(evs_left: Int) {
   case evs_left > -1 && evs_left < 509 {
@@ -147,6 +170,19 @@ fn validate_input(model: Model, msg: ConfigUpdate) {
   }
 }
 
+fn update_config(
+  model: Model,
+  config_msg: ConfigUpdate,
+) -> #(Model, Effect(Msg)) {
+  case validate_input(model, config_msg) {
+    Ok(config) -> {
+      let results = calcs.calc_results(config)
+      #(Model(..model, config:, results:), effect.none())
+    }
+    Error(_) -> #(model, effect.none())
+  }
+}
+
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     LocalStorageReturnedTheme(Error(_)) -> #(model, effect.none())
@@ -163,18 +199,9 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-fn update_config(
-  model: Model,
-  config_msg: ConfigUpdate,
-) -> #(Model, Effect(Msg)) {
-  case validate_input(model, config_msg) {
-    Ok(config) -> {
-      let results = calcs.calc_results(config)
-      #(Model(..model, config:, results:), effect.none())
-    }
-    Error(_) -> #(model, effect.none())
-  }
-}
+// --------------------------------------------------------
+// --------------------------------------------------------
+// theme setting
 
 fn get_theme() -> Effect(Msg) {
   use dispatch <- effect.from
@@ -206,55 +233,17 @@ fn set_localstorage(_key: String, _value: String) -> Nil {
   Nil
 }
 
-fn set_config(pokemon: Pokemon) {
-  calcs.PkmnConfig(
-    pokemon_name: pokemon.name,
-    base_hp: pokemon.stats.hp,
-    base_def: pokemon.stats.def,
-    base_sdef: pokemon.stats.sdef,
-    hp_iv: 31,
-    def_iv: 31,
-    sdef_iv: 31,
-    evs_left: 508,
-    level: 100,
-    nature_option: calcs.NeutralOption,
-    bias: 50,
-  )
-}
+// --------------------------------------------------------
+// --------------------------------------------------------
+// view func and helpers
 
-fn render_pokemon_names(pokemon_name: String) {
-  pokedex.pokedex
-  |> list.map(pair.first)
-  |> list.sort(string.compare)
-  |> list.map(fn(pkmn) {
-    case pokemon_name == pkmn {
-      True ->
-        html.option([attribute.value(pkmn), attribute.selected(True)], pkmn)
-      False -> html.option([attribute.value(pkmn)], pkmn)
-    }
-  })
-}
-
-fn render_nature(selected_nature: NatureOption) {
-  list.map(
-    [
-      calcs.FindBestOption,
-      calcs.NeutralOption,
-      calcs.IncreaseDefOption,
-      calcs.IncreaseSDefOption,
-    ],
-    fn(nature) {
-      let nature_string = nature_option_to_string(nature)
-      case nature == selected_nature {
-        True ->
-          html.option(
-            [attribute.value(nature_string), attribute.selected(True)],
-            nature_string,
-          )
-        False -> html.option([attribute.value(nature_string)], nature_string)
-      }
-    },
-  )
+fn nature_to_string(nature: Nature) {
+  case nature {
+    calcs.IncreaseDef -> "IncreaseDef"
+    calcs.IncreaseSDef -> "IncreaseSDef"
+    calcs.Neutral -> "Neutral"
+    _ -> "How did that happen?!"
+  }
 }
 
 fn nature_option_to_string(nature: NatureOption) {
@@ -280,19 +269,45 @@ fn string_to_nature_option(s: String) {
   }
 }
 
-fn nature_to_string(nature: Nature) {
-  case nature {
-    calcs.IncreaseDef -> "IncreaseDef"
-    calcs.IncreaseSDef -> "IncreaseSDef"
-    calcs.Neutral -> "Neutral"
-    _ -> "How did that happen?!"
-  }
+fn render_nature_option(selected_nature: NatureOption) {
+  list.map(
+    [
+      calcs.FindBestOption,
+      calcs.NeutralOption,
+      calcs.IncreaseDefOption,
+      calcs.IncreaseSDefOption,
+    ],
+    fn(nature) {
+      let nature_string = nature_option_to_string(nature)
+      case nature == selected_nature {
+        True ->
+          html.option(
+            [attribute.value(nature_string), attribute.selected(True)],
+            nature_string,
+          )
+        False -> html.option([attribute.value(nature_string)], nature_string)
+      }
+    },
+  )
+}
+
+fn render_pokemon_names(pokemon_name: String) {
+  pokedex.pokedex
+  |> list.map(pair.first)
+  |> list.sort(string.compare)
+  |> list.map(fn(pkmn) {
+    case pokemon_name == pkmn {
+      True ->
+        html.option([attribute.value(pkmn), attribute.selected(True)], pkmn)
+      False -> html.option([attribute.value(pkmn)], pkmn)
+    }
+  })
 }
 
 fn td_input(stat) {
   html.td([attribute.class("border-none")], [
     html.input([
-      attribute.class("input input-sm"),
+      attribute.class("input input-sm cursor-default"),
       attribute.class("input w-[50px]"),
       attribute.disabled(True),
       attribute.value(int.to_string(stat)),
@@ -318,6 +333,272 @@ fn td_input_editable(stat, min, max, update_msg) {
 fn td_text(text: String) {
   html.td([attribute.class("border-none"), attribute.class("w-1/4")], [
     html.text(text),
+  ])
+}
+
+fn config_table(model: Model) {
+  html.div(
+    [
+      attribute.id("config"),
+      attribute.class("bg-base-300 rounded-box shadow-md p-4 max-w-[456px]"),
+    ],
+    [
+      html.div(
+        [
+          attribute.class(""),
+        ],
+        [
+          html.table([attribute.class("table table-sm")], [
+            html.tbody([], [
+              html.tr([], [
+                html.td([attribute.class("border-none"), attribute.colspan(2)], [
+                  html.select(
+                    [
+                      attribute.class("select select-sm max-w-[156px]"),
+                      event.on_change(fn(s) {
+                        ConfigMsg(config_msg: UserUpdatedPokemon(s))
+                      }),
+                    ],
+                    render_pokemon_names(model.config.pokemon_name),
+                  ),
+                ]),
+                // html.td([attribute.class("border-none")], [
+              //   html.img([
+              //     attribute.height(28),
+              //     attribute.width(28),
+              //     attribute.alt("Sprite"),
+              //     attribute.src(
+              //       "sprites/" <> model.config.pokemon_name <> ".png",
+              //     ),
+              //   ]),
+              // ]),
+              ]),
+              html.tr([], [
+                td_text("Base HP:"),
+                td_input(model.config.base_hp),
+                td_text("IVs HP:"),
+                td_input_editable(model.config.hp_iv, "0", "31", fn(s) {
+                  ConfigMsg(config_msg: UserUpdatedHPIVs(s))
+                }),
+              ]),
+              html.tr([], [
+                td_text("Base Def:"),
+                td_input(model.config.base_def),
+                td_text("IVs Def:"),
+                td_input_editable(model.config.def_iv, "0", "31", fn(s) {
+                  ConfigMsg(config_msg: UserUpdatedDefIVs(s))
+                }),
+              ]),
+              html.tr([], [
+                td_text("Base SDef:"),
+                td_input(model.config.base_sdef),
+                td_text("IVs SDef:"),
+                td_input_editable(model.config.sdef_iv, "0", "31", fn(s) {
+                  ConfigMsg(config_msg: UserUpdatedSDefIVs(s))
+                }),
+              ]),
+              html.tr([], [
+                td_text("EVs left:"),
+                td_input_editable(model.config.evs_left, "0", "508", fn(s) {
+                  ConfigMsg(config_msg: UserUpdatedEVsLeft(s))
+                }),
+                td_text("Level:"),
+                td_input_editable(model.config.level, "0", "100", fn(s) {
+                  ConfigMsg(config_msg: UserUpdatedLevel(s))
+                }),
+              ]),
+              html.tr([], [
+                td_text("Nature:"),
+                html.td(
+                  [
+                    attribute.class("border-none"),
+                    attribute.colspan(3),
+                  ],
+                  [
+                    html.select(
+                      [
+                        attribute.class("select select-sm max-w-[130px]"),
+                        event.on_change(fn(s) {
+                          ConfigMsg(config_msg: UserUpdatedNature(s))
+                        }),
+                      ],
+                      render_nature_option(model.config.nature_option),
+                    ),
+                  ],
+                ),
+              ]),
+              html.tr([attribute.class("")], [
+                html.td([attribute.class("text-right border-none")], [
+                  html.text("SDef"),
+                ]),
+                html.td(
+                  [
+                    attribute.class("text-center border-none"),
+                    attribute.colspan(2),
+                  ],
+                  [
+                    html.text("Bias"),
+                  ],
+                ),
+                html.td([attribute.class("text-left border-none")], [
+                  html.text("Def"),
+                ]),
+              ]),
+              html.tr([attribute.class("")], [
+                html.td(
+                  [
+                    attribute.class("text-right border-none"),
+                  ],
+                  [
+                    html.input([
+                      attribute.class("input w-[60px] input-sm text-center"),
+
+                      attribute.disabled(True),
+                      attribute.value(
+                        int.to_string(100 - model.config.bias) <> "%",
+                      ),
+                    ]),
+                  ],
+                ),
+                html.td(
+                  [
+                    attribute.class("text-center border-none"),
+                    attribute.colspan(2),
+                  ],
+                  [
+                    html.input([
+                      attribute.class("range range-primary-content range-xs"),
+                      event.on_input(fn(s) {
+                        ConfigMsg(config_msg: UserUpdatedBias(s))
+                      }),
+                      attribute.value(int.to_string(model.config.bias)),
+                      attribute.min("0"),
+                      attribute.max("100"),
+                      attribute.step("1"),
+                      attribute.name("bias"),
+                      attribute.id("bias"),
+                      attribute.type_("range"),
+                    ]),
+                  ],
+                ),
+
+                html.td([attribute.class("text-left border-none")], [
+                  html.input([
+                    attribute.class("input w-[60px] input-sm text-center"),
+                    attribute.disabled(True),
+                    attribute.value(int.to_string(model.config.bias) <> "%"),
+                  ]),
+                ]),
+              ]),
+              html.tr([], [
+                html.td([attribute.colspan(3)], []),
+                html.td([], [
+                  html.button(
+                    [
+                      attribute.class("btn btn-soft btn-primary btn-sm"),
+                      event.on_click(ConfigMsg(UserResetBias)),
+                    ],
+                    [html.text("reset")],
+                  ),
+                ]),
+              ]),
+            ]),
+          ]),
+        ],
+      ),
+    ],
+  )
+}
+
+fn results_table(model: Model) {
+  html.div(
+    [
+      attribute.id("results"),
+      attribute.class("bg-base-200 rounded-box shadow-md p-4 max-w-[456px]"),
+    ],
+    [
+      html.div([], [
+        html.table([attribute.class("table")], [
+          html.thead([], [
+            html.tr([], [
+              html.th([], []),
+              html.th([], [html.text("EVs")]),
+              html.th([], [html.text("Stat")]),
+              html.th([], [html.text("Tier")]),
+            ]),
+          ]),
+          html.tbody([], [
+            html.tr([], [
+              td_text("HP:"),
+              td_text(int.to_string(model.results.hp_evs)),
+              td_text(int.to_string(model.results.hp_stat)),
+              td_text("N/A"),
+            ]),
+            html.tr([], [
+              td_text("Def:"),
+              td_text(int.to_string(model.results.def_evs)),
+              td_text(int.to_string(model.results.def_stat)),
+              td_text(
+                float.to_string(float.to_precision(model.results.def_tier, 2)),
+              ),
+            ]),
+            html.tr([], [
+              td_text("SDef:"),
+              td_text(int.to_string(model.results.sdef_evs)),
+              td_text(int.to_string(model.results.sdef_stat)),
+              td_text(
+                float.to_string(float.to_precision(model.results.sdef_tier, 2)),
+              ),
+            ]),
+            html.tr([], [
+              td_text("Nature:"),
+              html.td([attribute.class("border-none"), attribute.colspan(3)], [
+                html.text(nature_to_string(model.results.nature)),
+              ]),
+            ]),
+          ]),
+        ]),
+      ]),
+    ],
+  )
+}
+
+fn link(text: String, link: String) {
+  html.a(
+    [
+      attribute.class("link link-primary"),
+      attribute.target("_blank"),
+      attribute.href(link),
+    ],
+    [
+      html.text(text),
+    ],
+  )
+}
+
+fn references() {
+  html.div([attribute.id("reference")], [
+    html.text("Reference:"),
+    html.ul([attribute.class("list-disc pl-6")], [
+      html.li([], [
+        link(
+          "How To Maximize Your Defenses",
+          "https://www.smogon.com/dp/articles/maximizing_defenses",
+        ),
+      ]),
+      html.li([], [
+        link(
+          "Defensive tiers",
+          "https://www.smogon.com/forums/threads/defense-and-special-defense-tiers.24931/",
+        ),
+      ]),
+      html.li([], [
+        link(
+          "PHP Defense EV Calculator",
+          "https://pokestudio.altervista.org/defevs.php",
+        ),
+      ]),
+    ]),
   ])
 }
 
@@ -374,291 +655,9 @@ fn view(model: Model) -> Element(Msg) {
         [
           attribute.class("grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-20"),
         ],
-        [
-          html.div(
-            [
-              attribute.id("config"),
-              attribute.class("bg-base-300 rounded-box shadow-md p-4"),
-            ],
-            [
-              html.div(
-                [
-                  attribute.class(""),
-                ],
-                [
-                  html.table([attribute.class("table table-sm")], [
-                    html.tbody([], [
-                      html.tr([], [
-                        html.td(
-                          [attribute.class("border-none"), attribute.colspan(2)],
-                          [
-                            html.select(
-                              [
-                                attribute.class(
-                                  "select select-sm max-w-[167px]",
-                                ),
-                                event.on_change(fn(s) {
-                                  ConfigMsg(config_msg: UserUpdatedPokemon(s))
-                                }),
-                              ],
-                              render_pokemon_names(model.config.pokemon_name),
-                            ),
-                          ],
-                        ),
-                      ]),
-                      html.tr([], [
-                        td_text("Base HP:"),
-                        td_input(model.config.base_hp),
-                        td_text("IVs HP:"),
-                        td_input_editable(model.config.hp_iv, "0", "31", fn(s) {
-                          ConfigMsg(config_msg: UserUpdatedHPIVs(s))
-                        }),
-                      ]),
-                      html.tr([], [
-                        td_text("Base Def:"),
-                        td_input(model.config.base_def),
-                        td_text("IVs Def:"),
-                        td_input_editable(model.config.def_iv, "0", "31", fn(s) {
-                          ConfigMsg(config_msg: UserUpdatedDefIVs(s))
-                        }),
-                      ]),
-                      html.tr([], [
-                        td_text("Base SDef:"),
-                        td_input(model.config.base_sdef),
-                        td_text("IVs SDef:"),
-                        td_input_editable(
-                          model.config.sdef_iv,
-                          "0",
-                          "31",
-                          fn(s) { ConfigMsg(config_msg: UserUpdatedSDefIVs(s)) },
-                        ),
-                      ]),
-                      html.tr([], [
-                        td_text("EVs left:"),
-                        td_input_editable(
-                          model.config.evs_left,
-                          "0",
-                          "508",
-                          fn(s) { ConfigMsg(config_msg: UserUpdatedEVsLeft(s)) },
-                        ),
-                        td_text("Level:"),
-                        td_input_editable(model.config.level, "0", "100", fn(s) {
-                          ConfigMsg(config_msg: UserUpdatedLevel(s))
-                        }),
-                      ]),
-                      html.tr([], [
-                        td_text("Nature:"),
-                        html.td(
-                          [
-                            attribute.class("border-none"),
-                            attribute.colspan(3),
-                          ],
-                          [
-                            html.select(
-                              [
-                                attribute.class(
-                                  "select select-sm max-w-[130px]",
-                                ),
-                                event.on_change(fn(s) {
-                                  ConfigMsg(config_msg: UserUpdatedNature(s))
-                                }),
-                              ],
-                              render_nature(model.config.nature_option),
-                            ),
-                          ],
-                        ),
-                      ]),
-
-                      html.tr([attribute.class("")], [
-                        html.td([attribute.class("text-right border-none")], [
-                          html.text("SDef"),
-                        ]),
-                        html.td(
-                          [
-                            attribute.class("text-center border-none"),
-                            attribute.colspan(2),
-                          ],
-                          [
-                            html.text("Bias"),
-                          ],
-                        ),
-                        html.td([attribute.class("text-left border-none")], [
-                          html.text("Def"),
-                        ]),
-                      ]),
-                      html.tr([attribute.class("")], [
-                        html.td(
-                          [
-                            attribute.class("text-right border-none"),
-                          ],
-                          [
-                            html.input([
-                              attribute.class(
-                                "input w-[60px] input-sm text-center",
-                              ),
-
-                              attribute.disabled(True),
-                              attribute.value(
-                                int.to_string(100 - model.config.bias) <> "%",
-                              ),
-                            ]),
-                          ],
-                        ),
-                        html.td(
-                          [
-                            attribute.class("text-center border-none"),
-                            attribute.colspan(2),
-                          ],
-                          [
-                            html.input([
-                              attribute.class(
-                                "range range-primary-content range-xs",
-                              ),
-                              event.on_input(fn(s) {
-                                ConfigMsg(config_msg: UserUpdatedBias(s))
-                              }),
-                              attribute.value(int.to_string(model.config.bias)),
-                              attribute.min("0"),
-                              attribute.max("100"),
-                              attribute.step("1"),
-                              attribute.name("bias"),
-                              attribute.id("bias"),
-                              attribute.type_("range"),
-                            ]),
-                          ],
-                        ),
-
-                        html.td([attribute.class("text-left border-none")], [
-                          html.input([
-                            attribute.class(
-                              "input w-[60px] input-sm text-center",
-                            ),
-                            attribute.disabled(True),
-                            attribute.value(
-                              int.to_string(model.config.bias) <> "%",
-                            ),
-                          ]),
-                        ]),
-                      ]),
-                      html.tr([], [
-                        html.td([attribute.colspan(3)], []),
-                        html.td([], [
-                          html.button(
-                            [
-                              attribute.class("btn btn-soft btn-primary btn-sm"),
-                              event.on_click(ConfigMsg(UserResetBias)),
-                            ],
-                            [html.text("reset")],
-                          ),
-                        ]),
-                      ]),
-                    ]),
-                  ]),
-                ],
-              ),
-            ],
-          ),
-          html.div(
-            [
-              attribute.id("results"),
-              attribute.class("bg-base-200 rounded-box shadow-md p-4"),
-            ],
-            [
-              html.div([attribute.class("")], [
-                html.table([attribute.class("table")], [
-                  html.thead([], [
-                    html.tr([], [
-                      html.th([], []),
-                      html.th([], [html.text("EVs")]),
-                      html.th([], [html.text("Stat")]),
-                      html.th([], [html.text("Tier")]),
-                    ]),
-                  ]),
-                  html.tbody([], [
-                    html.tr([], [
-                      td_text("HP:"),
-                      td_text(int.to_string(model.results.hp_evs)),
-                      td_text(int.to_string(model.results.hp_stat)),
-                      td_text("N/A"),
-                    ]),
-                    html.tr([], [
-                      td_text("Def:"),
-                      td_text(int.to_string(model.results.def_evs)),
-                      td_text(int.to_string(model.results.def_stat)),
-                      td_text(
-                        float.to_string(float.to_precision(
-                          model.results.def_tier,
-                          2,
-                        )),
-                      ),
-                    ]),
-                    html.tr([], [
-                      td_text("SDef:"),
-                      td_text(int.to_string(model.results.sdef_evs)),
-                      td_text(int.to_string(model.results.sdef_stat)),
-                      td_text(
-                        float.to_string(float.to_precision(
-                          model.results.sdef_tier,
-                          2,
-                        )),
-                      ),
-                    ]),
-                    html.tr([], [
-                      td_text("Nature:"),
-                      html.td(
-                        [attribute.class("border-none"), attribute.colspan(3)],
-                        [html.text(nature_to_string(model.results.nature))],
-                      ),
-                    ]),
-                  ]),
-                ]),
-              ]),
-            ],
-          ),
-        ],
+        [config_table(model), results_table(model)],
       ),
-      html.div([attribute.id("reference")], [
-        html.text("Reference:"),
-        html.ul([attribute.class("list-disc pl-6")], [
-          html.li([], [
-            html.a(
-              [
-                attribute.class("link link-primary"),
-                attribute.href(
-                  "https://www.smogon.com/dp/articles/maximizing_defenses",
-                ),
-              ],
-              [
-                html.text("How To Maximize Your Defenses"),
-              ],
-            ),
-          ]),
-          html.li([], [
-            html.a(
-              [
-                attribute.class("link link-primary"),
-                attribute.href(
-                  "https://www.smogon.com/forums/threads/defense-and-special-defense-tiers.24931/",
-                ),
-              ],
-              [
-                html.text("Defensive tiers"),
-              ],
-            ),
-          ]),
-          html.li([], [
-            html.a(
-              [
-                attribute.class("link link-primary"),
-                attribute.href("https://pokestudio.altervista.org/defevs.php"),
-              ],
-              [
-                html.text("PHP Defense EV Calculator"),
-              ],
-            ),
-          ]),
-        ]),
-      ]),
+      references(),
     ],
   )
 }
