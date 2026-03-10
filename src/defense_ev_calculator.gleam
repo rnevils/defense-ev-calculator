@@ -609,7 +609,7 @@ fn view(model: Model) -> Element(Msg) {
       html.div(
         [
           attribute.id("navbar"),
-          attribute.class("navbar"),
+          attribute.class("navbar p-0"),
         ],
         [
           html.div([attribute.class("flex-1 text-4xl")], [
