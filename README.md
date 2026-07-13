@@ -6,6 +6,8 @@ Also displays the calculated ***Defensive Tier*** as defined in this [Smogon for
 
 Based on the original calculator found [here](https://pokestudio.altervista.org/defevs.php)
 
+![Teamchart Sample Image](screenshot.png)
+
 ## Config
 
 CSS is using [DaisyUI](https://daisyui.com). Download the .mjs source files and place into `src/vendor`
